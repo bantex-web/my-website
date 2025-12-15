@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Subject Quiz App</title>
+<style>
+body { font-family: Arial; background:#f2f2f2; display:flex; justify-content:center; align-items:flex-start; padding:20px; min-height:100vh; }
+.quiz-container { background:white; padding:20px; border-radius:10px; width:700px; box-shadow:0 6px 12px rgba(0,0,0,0.2); text-align:center; transition: background-color 0.5s; }
+h1 {color:#007bff;}
+#intro {margin-bottom:20px; font-size:16px; color:#555;}
+#subjects a {
+  text-decoration:none; color:white; padding:15px 25px; margin:10px; display:inline-block;
+  border-radius:12px; font-weight:bold; transition: transform 0.2s, box-shadow 0.2s;
+}
+#subjects a:hover {transform:translateY(-5px); box-shadow:0 8px 12px rgba(0,0,0,0.3);}
+.bio{background:#28a745;} .chem{background:#17a2b8;} .phys{background:#ffc107; color:#000;} .math{background:#fd7e14;} .cs{background:#6f42c1;}
+.question{font-weight:bold; margin-bottom:10px;}
+.options label{display:block; margin:5px 0; cursor:pointer; padding:10px; border-radius:5px; background:#eee; transition: transform 0.2s;}
+.options label:hover{transform:scale(1.05); background:#d1ecf1;}
+.correct{background-color:#c8e6c9; color:green; font-weight:bold;}
+.wrong{background-color:#ffcdd2; color:red; font-weight:bold;}
+.explanation{margin-top:10px; font-style:italic;}
+#score{margin-top:10px; font-weight:bold;}
+button{margin-top:15px; padding:10px 15px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer;}
+button:hover{background:#0056b3;}
+#timer{font-size:18px; font-weight:bold; color:#d9534f; margin-bottom:10px;}
+#subject-title{font-weight:bold; margin-bottom:10px; font-size:20px;}
+#progress-container {width:100%; background:#ddd; height:15px; border-radius:8px; margin:15px 0;}
+#progress-bar {height:100%; width:0%; background:#007bff; border-radius:8px; transition: width 0.5s;}
+</style>
+</head>
+<body>
+<div class="quiz-container">
+<h1>Multi-Subject Quiz App</h1>
+<div id="intro">
+  Welcome to the <strong>Multi-Subject Quiz App</strong>! 🎉<br>
+  Test your knowledge in Biology, Chemistry, Physics, Mathematics, or Computer Science. 
+  Each quiz has 10 exciting questions with a <strong>10-second timer</strong> for each question. 
+  Answer quickly and see instant feedback with explanations, and track your score as you go! 
+  Choose a subject below to get started.
+</div>
+<div id="subjects">
+    <a href="#" class="bio" data-subject="biology">Biology</a>
+    <a href="#" class="chem" data-subject="chemistry">Chemistry</a>
+    <a href="#" class="phys" data-subject="physics">Physics</a>
+    <a href="#" class="math" data-subject="math">Mathematics</a>
+    <a href="#" class="cs" data-subject="cs">Computer Science</a>
+</div>
+
+<div id="progress-container"><div id="progress-bar"></div></div>
+<div id="quiz-box"></div>
+<button id="restart-btn" style="display:none;">Restart Quiz</button>
+</div>
+
+<script>
+// Real questions for each subject
+const allQuestions = {
+  biology: [
+    {question:"1. What is the basic unit of life?", options:["Cell","Atom","Molecule"], answer:0, explanation:"The cell is the smallest unit of life."},
+    {question:"2. Which process do plants use to make food?", options:["Respiration","Photosynthesis","Transpiration"], answer:1, explanation:"Photosynthesis converts sunlight into chemical energy."},
+    {question:"3. DNA stands for?", options:["Deoxyribonucleic Acid","Dicarboxy Nucleic Acid","Deoxyribose Nucleus Acid"], answer:0, explanation:"DNA carries genetic information."},
+    {question:"4. Which blood cells fight infection?", options:["Red Blood Cells","White Blood Cells","Platelets"], answer:1, explanation:"White blood cells protect the body from pathogens."},
+    {question:"5. What organelle is known as the powerhouse of the cell?", options:["Nucleus","Mitochondria","Ribosome"], answer:1, explanation:"Mitochondria produce energy for the cell."},
+    {question:"6. Which biomolecule stores genetic information?", options:["Proteins","DNA","Lipids"], answer:1, explanation:"DNA stores genetic instructions."},
+    {question:"7. Which kingdom do mushrooms belong to?", options:["Plantae","Fungi","Animalia"], answer:1, explanation:"Fungi include mushrooms and yeast."},
+    {question:"8. What is the process of cell division called?", options:["Mitosis","Meiosis","Photosynthesis"], answer:0, explanation:"Mitosis divides a cell into two identical cells."},
+    {question:"9. Which system controls body activities using hormones?", options:["Nervous System","Endocrine System","Digestive System"], answer:1, explanation:"Endocrine system regulates body functions with hormones."},
+    {question:"10. Which part of the plant conducts water?", options:["Xylem","Phloem","Stomata"], answer:0, explanation:"Xylem transports water from roots to leaves."}
+  ],
+  chemistry: [
+    {question:"1. What is H2O?", options:["Oxygen","Water","Hydrogen"], answer:1, explanation:"H2O is the chemical formula for water."},
+    {question:"2. Which gas is released during photosynthesis?", options:["Oxygen","Carbon Dioxide","Nitrogen"], answer:0, explanation:"Oxygen is produced as a byproduct."},
+    {question:"3. What is the atomic number of Carbon?", options:["6","12","14"], answer:0, explanation:"Carbon has 6 protons."},
+    {question:"4. Which is a noble gas?", options:["Neon","Oxygen","Nitrogen"], answer:0, explanation:"Neon is a noble gas, inert and stable."},
+    {question:"5. What is NaCl?", options:["Salt","Sugar","Baking Soda"], answer:0, explanation:"NaCl is table salt."},
+    {question:"6. Acids have a pH of?", options:["Below 7","7","Above 7"], answer:0, explanation:"Acids are pH<7."},
+    {question:"7. Base has pH?", options:["Below 7","7","Above 7"], answer:2, explanation:"Bases have pH above 7."},
+    {question:"8. Which element is liquid at room temperature?", options:["Mercury","Iron","Sodium"], answer:0, explanation:"Mercury is a liquid metal."},
+    {question:"9. Which type of bond shares electrons?", options:["Ionic","Covalent","Hydrogen"], answer:1, explanation:"Covalent bonds share electrons between atoms."},
+    {question:"10. What is the chemical symbol for gold?", options:["Au","Ag","Gd"], answer:0, explanation:"Gold's symbol is Au."}
+  ],
+  physics: [
+    {question:"1. What is the force that pulls objects toward Earth?", options:["Gravity","Magnetism","Friction"], answer:0, explanation:"Gravity pulls objects downward."},
+    {question:"2. Speed is measured in?", options:["Meters","Meters per second","Seconds"], answer:1, explanation:"Speed = distance/time, measured in m/s."},
+    {question:"3. Light travels fastest in?", options:["Air","Vacuum","Water"], answer:1, explanation:"Light travels fastest in vacuum."},
+    {question:"4. What is Newton's Third Law?", options:["F=ma","Action=Reaction","Energy=mc^2"], answer:1, explanation:"For every action, there is an equal and opposite reaction."},
+    {question:"5. Unit of electric current?", options:["Volt","Ampere","Ohm"], answer:1, explanation:"Current is measured in Amperes (A)."},
+    {question:"6. Which phenomenon splits white light into colors?", options:["Reflection","Refraction","Dispersion"], answer:2, explanation:"Dispersion separates colors through a prism."},
+    {question:"7. Sound travels fastest in?", options:["Air","Water","Steel"], answer:2, explanation:"Sound travels fastest in solids like steel."},
+    {question:"8. Energy due to motion is called?", options:["Potential","Kinetic","Thermal"], answer:1, explanation:"Kinetic energy is energy of motion."},
+    {question:"9. Which law explains buoyancy?", options:["Archimedes’ principle","Ohm's Law","Hooke's Law"], answer:0, explanation:"Archimedes’ principle explains buoyant force."},
+    {question:"10. Unit of force?", options:["Newton","Joule","Watt"], answer:0, explanation:"Force is measured in Newtons (N)."}
+  ],
+  math: [
+    {question:"1. What is 7+8?", options:["14","15","16"], answer:1, explanation:"7+8=15."},
+    {question:"2. Square root of 81?", options:["9","8","7"], answer:0, explanation:"√81 = 9."},
+    {question:"3. 5×6=?", options:["30","25","35"], answer:0, explanation:"5×6=30."},
+    {question:"4. 12÷4=?", options:["2","3","4"], answer:1, explanation:"12 ÷ 4 = 3."},
+    {question:"5. 2^3=?", options:["6","8","9"], answer:1, explanation:"2^3 = 2×2×2 = 8."},
+    {question:"6. Value of π (approx)?", options:["3.14","3.41","3.04"], answer:0, explanation:"π ≈ 3.14."},
+    {question:"7. What is 15% of 200?", options:["20","25","30"], answer:2, explanation:"15% of 200 = 30."},
+    {question:"8. Solve: 2x=10, x=?", options:["5","6","4"], answer:0, explanation:"x=5."},
+    {question:"9. 9×9=?", options:["81","72","79"], answer:0, explanation:"9×9=81."},
+    {question:"10. 100-45=?", options:["55","45","65"], answer:0, explanation:"100-45=55."}
+  ],
+  cs: [
+    {question:"1. What does HTML stand for?", options:["Hyper Text Markup Language","Hyperlinks and Text Markup","Home Tool Markup Language"], answer:0, explanation:"HTML is the standard language for creating web pages."},
+    {question:"2. Main purpose of CSS?", options:["Adds style to web pages","Runs website logic","Stores data"], answer:0, explanation:"CSS controls design like colors, fonts, layout."},
+    {question:"3. Which language runs in browser?", options:["Java","JavaScript","Python"], answer:1, explanation:"JavaScript runs in browsers and adds interactivity."},
+    {question:"4. Tag used for hyperlink?", options:["a","link","href"], answer:0, explanation:"<a> is used to create clickable links."},
+    {question:"5. DOM stands for?", options:["Document Object Model","Data Object Model","Digital Object Module"], answer:0, explanation:"DOM lets JavaScript access and modify HTML elements."},
+    {question:"6. Which language is NOT for styling?", options:["CSS","HTML","JavaScript"], answer:1, explanation:"HTML structures content; CSS styles it."},
+    {question:"7. Attribute for image source?", options:["src","href","link"], answer:0, explanation:"`src` tells the browser where the image file is."},
+    {question:"8. Symbol for ID selectors in CSS?", options:["#",".","*"], answer:0, explanation:"ID selectors use # (e.g., #header)."},
+    {question:"9. Tag for table row?", options:["tr","td","th"], answer:0, explanation:"<tr> creates a table row."},
+    {question:"10. Tag for numbered list?", options:["ul","ol","li"], answer:1, explanation:"<ol> creates an ordered (numbered) list."}
+  ]
+};
+
+let currentSubject = null;
+let questions = [];
+let currentQuestion = 0;
+let score = 0;
+let timerInterval;
+let timeLeft = 10;
+
+const quizBox = document.getElementById("quiz-box");
+const restartBtn = document.getElementById("restart-btn");
+const progressBar = document.getElementById("progress-bar");
+const quizContainer = document.querySelector(".quiz-container");
+
+// Subject selection
+document.querySelectorAll('#subjects a').forEach(link=>{
+    link.addEventListener('click',(e)=>{
+        e.preventDefault();
+        currentSubject = link.dataset.subject;
+        questions = allQuestions[currentSubject];
+        currentQuestion = 0;
+        score = 0;
+        document.getElementById('subjects').style.display='none';
+        document.getElementById('intro').style.display='none';
+        restartBtn.style.display='none';
+        setSubjectColor();
+        updateProgress();
+        loadQuestion();
+    });
+});
+
+// Change background color based on subject
+function setSubjectColor(){
+    const colors = {biology:'#d4edda', chemistry:'#d1ecf1', physics:'#fff3cd', math:'#ffe5d1', cs:'#e2d9f3'};
+    quizContainer.style.backgroundColor = colors[currentSubject];
+}
+
+// Timer
+function startTimer(){
+    const timerDisplay=document.getElementById("timer");
+    timeLeft=10;
+    timerDisplay.textContent="Time Left: "+timeLeft+"s";
+    timerInterval=setInterval(()=>{
+        timeLeft--;
+        timerDisplay.textContent="Time Left: "+timeLeft+"s";
+        if(timeLeft<=0){clearInterval(timerInterval); handleTimeUp();}
+    },1000);
+}
+
+// Handle time up
+function handleTimeUp(){
+    const q=questions[currentQuestion];
+    const labels=document.querySelectorAll(".options label");
+    const inputs=document.querySelectorAll("input[name='option']");
+    inputs.forEach(inp=>inp.disabled=true);
+    labels.forEach(label=>label.style.pointerEvents='none');
+    labels[q.answer].classList.add("correct");
+    document.getElementById("explanation").innerText="Time's up! "+q.explanation;
+    document.getElementById("next-btn").style.display="block";
+}
+
+// Load question
+function loadQuestion(){
+    clearInterval(timerInterval);
+    if(currentQuestion>=questions.length){
+        quizBox.innerHTML=`<h2>Quiz Completed!</h2><p>Your final score: ${score} / ${questions.length}</p>`;
+        restartBtn.style.display="block";
+        return;
+    }
+    const q=questions[currentQuestion];
+    quizBox.innerHTML=`
+        <div id="subject-title">Subject: ${currentSubject.charAt(0).toUpperCase()+currentSubject.slice(1)}</div>
+        <div id="timer">Time Left: 10s</div>
+        <div class="question">${q.question}</div>
+        <div class="options">${q.options.map((opt,i)=>`<label><input type="radio" name="option" value="${i}"> ${opt}</label>`).join('')}</div>
+        <div class="explanation" id="explanation"></div>
+        <div id="score">Score: ${score} / ${questions.length}</div>
+        <button id="next-btn" style="display:none;">Next Question</button>
+    `;
+    startTimer();
+    const nextBtn=document.getElementById("next-btn");
+    const labels=document.querySelectorAll(".options label");
+    labels.forEach((label,index)=>{
+        label.addEventListener('click',()=>{
+            clearInterval(timerInterval);
+            const inputs=document.querySelectorAll("input[name='option']");
+            inputs.forEach(inp=>inp.disabled=true);
+            labels.forEach(label=>label.style.pointerEvents='none');
+            labels.forEach((lab,i)=>{
+                if(i===q.answer){ 
+                    lab.classList.add("correct"); 
+                    lab.innerHTML += " 🎉";
+                }
+                if(i===index && i!==q.answer) lab.classList.add("wrong");
+            });
+            document.getElementById("explanation").innerText=q.explanation;
+            if(index===q.answer) score++;
+            updateProgress();
+            nextBtn.style.display="block";
+        });
+    });
+    nextBtn.onclick=()=>{currentQuestion++; loadQuestion();}
+}
+
+// Progress bar update
+function updateProgress(){
+    const percent = ((currentQuestion)/questions.length)*100;
+    progressBar.style.width = percent + "%";
+}
+
+// Restart quiz
+function restartQuiz(){
+    clearInterval(timerInterval);
+    currentQuestion=0; score=0;
+    document.getElementById('subjects').style.display='block';
+    document.getElementById('intro').style.display='block';
+    quizBox.innerHTML='';
+    restartBtn.style.display='none';
+    progressBar.style.width="0%";
+    quizContainer.style.backgroundColor="white";
+}
+
+restartBtn.addEventListener('click',restartQuiz);
+</script>
+</body>
+</html>
